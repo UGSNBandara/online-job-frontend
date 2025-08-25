@@ -244,8 +244,10 @@ const UserProfilePage = () => {
     );
   }
 
+  const isRecruiter = profile?.role === 'recruiter';
+
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto', px: 2 }}>
+  <Box sx={{ maxWidth: 900, mx: 'auto', px: 2, minHeight: '70vh', width: '100%' }}>
       {/* Current user profile */}
 
       {/* User Details Card - Modern Horizontal Layout */}
@@ -378,43 +380,46 @@ const UserProfilePage = () => {
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 />
               </Grid>
-              <Grid item xs={12}>
-                <Box display="flex" gap={1} mb={2}>
-                  <TextField
-                    fullWidth
-                    label="Add Skill"
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddSkill();
-                      }
-                    }}
-                    variant="outlined"
-                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={handleAddSkill}
-                    disabled={!newSkill.trim()}
-                    sx={{ borderRadius: '8px', minWidth: '100px' }}
-                  >
-                    Add
-                  </Button>
-                </Box>
-                <Box display="flex" flexWrap="wrap" gap={1}>
-                  {formData.skills.map((skill, index) => (
-                    <SkillButton
-                      key={index}
-                      size="small"
-                      onClick={() => handleRemoveSkill(skill)}
+              {/* Only show add skill section if not recruiter */}
+              {!isRecruiter && (
+                <Grid item xs={12}>
+                  <Box display="flex" gap={1} mb={2}>
+                    <TextField
+                      fullWidth
+                      label="Add Skill"
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSkill();
+                        }
+                      }}
+                      variant="outlined"
+                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleAddSkill}
+                      disabled={!newSkill.trim()}
+                      sx={{ borderRadius: '8px', minWidth: '100px' }}
                     >
-                      {skill} ×
-                    </SkillButton>
-                  ))}
-                </Box>
-              </Grid>
+                      Add
+                    </Button>
+                  </Box>
+                  <Box display="flex" flexWrap="wrap" gap={1}>
+                    {formData.skills.map((skill, index) => (
+                      <SkillButton
+                        key={index}
+                        size="small"
+                        onClick={() => handleRemoveSkill(skill)}
+                      >
+                        {skill} ×
+                      </SkillButton>
+                    ))}
+                  </Box>
+                </Grid>
+              )}
               <Grid item xs={12}>
                 <Button
                   type="submit"
@@ -460,4 +465,4 @@ const UserProfilePage = () => {
   );
 };
 
-export default UserProfilePage; 
+export default UserProfilePage;

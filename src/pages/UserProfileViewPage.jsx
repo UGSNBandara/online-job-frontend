@@ -90,7 +90,7 @@ function UserProfileViewPage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto', px: 2 }}>
+  <Box sx={{ maxWidth: 900, mx: 'auto', px: 2, minHeight: '70vh', width: '100%' }}>
       <ProfileContainer elevation={3} sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', mb: 4, p: 3 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mr: { md: 4, xs: 0 }, mb: { xs: 2, md: 0 } }}>
           <ProfileImage

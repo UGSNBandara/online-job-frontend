@@ -72,9 +72,12 @@ const CompanyAvatar = styled(Avatar)(({ theme }) => ({
 }));
 
 function JobSection() {
-  const { user: authUser, isLoggedIn } = useAuth();
+  const { user: authUser } = useAuth();
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
+  // Only recruiters can create jobs, but both can view all jobs
+  const isRecruiter = authUser?.role === 'recruiter';
+  const isApplicant = authUser?.role === 'applicant';
   const [currentView, setCurrentView] = useState('all'); // 'all' or 'my'
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,19 +100,15 @@ function JobSection() {
   // Fetch jobs based on current view
   useEffect(() => {
     fetchJobs();
-  }, [currentView, authUser?.id]);
+  }, [authUser?.id, currentView]);
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
       const allJobs = await ApiService.getAllJobs();
-      
-      if (currentView === 'my' && authUser?.id) {
-        // Filter jobs created by current user
-        const myJobs = allJobs.filter(job => job.user_id === authUser.id);
-        setJobs(myJobs);
+      if (isRecruiter && currentView === 'my' && authUser?.id) {
+        setJobs(allJobs.filter(job => job.user_id === authUser.id));
       } else {
-        // Show all jobs
         setJobs(allJobs);
       }
       setError(null);
@@ -218,47 +217,49 @@ function JobSection() {
 
   return (
     <>
-      {/* Create Job Button - Always visible */}
-      <Box sx={{ mb: 3 }}>
-        <CreateJobButton
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreateDialog}
-        >
-          Post a New Job
-        </CreateJobButton>
-      </Box>
-
-      {/* Toggle between All Jobs and My Jobs */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 1 }}>
-          View Jobs
-        </Typography>
-        <ButtonGroup variant="outlined" size="small" fullWidth>
-          <Button 
-            onClick={() => setCurrentView('all')}
-            variant={currentView === 'all' ? 'contained' : 'outlined'}
-            sx={{ 
-              flex: 1, 
-              borderRadius: '8px 0 0 8px',
-              textTransform: 'none'
-            }}
-          >
-            All Jobs
-          </Button>
-          <Button 
-            onClick={() => setCurrentView('my')}
-            variant={currentView === 'my' ? 'contained' : 'outlined'}
-            sx={{ 
-              flex: 1, 
-              borderRadius: '0 8px 8px 0',
-              textTransform: 'none'
-            }}
-          >
-            My Jobs
-          </Button>
-        </ButtonGroup>
-      </Box>
+      {/* Recruiters: Create Job Button and Toggle */}
+      {isRecruiter && (
+        <>
+          <Box sx={{ mb: 3 }}>
+            <CreateJobButton
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreateDialog}
+            >
+              Post a New Job
+            </CreateJobButton>
+          </Box>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 1 }}>
+              View Jobs
+            </Typography>
+            <ButtonGroup variant="outlined" size="small" fullWidth>
+              <Button 
+                onClick={() => setCurrentView('all')}
+                variant={currentView === 'all' ? 'contained' : 'outlined'}
+                sx={{ 
+                  flex: 1, 
+                  borderRadius: '8px 0 0 8px',
+                  textTransform: 'none'
+                }}
+              >
+                All Jobs
+              </Button>
+              <Button 
+                onClick={() => setCurrentView('my')}
+                variant={currentView === 'my' ? 'contained' : 'outlined'}
+                sx={{ 
+                  flex: 1, 
+                  borderRadius: '0 8px 8px 0',
+                  textTransform: 'none'
+                }}
+              >
+                My Jobs
+              </Button>
+            </ButtonGroup>
+          </Box>
+        </>
+      )}
 
       {/* Error Alert */}
       {error && (
@@ -276,10 +277,10 @@ function JobSection() {
         <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
           <WorkIcon sx={{ fontSize: 60, mb: 2, opacity: 0.5 }} />
           <Typography variant="h6">
-            {currentView === 'my' ? 'No jobs posted yet' : 'No jobs available'}
+            No jobs available
           </Typography>
           <Typography variant="body2">
-            {currentView === 'my' ? 'Be the first to post a job opportunity!' : 'Check back later for new opportunities.'}
+            Check back later for new opportunities.
           </Typography>
         </Box>
       ) : (
@@ -295,7 +296,8 @@ function JobSection() {
                     <Typography variant="h6" component="h2" sx={{ fontWeight: 600, mb: 1 }}>
                       {job.title}
                     </Typography>
-                    {isJobOwner(job) && (
+                    {/* Only recruiters can edit/delete their jobs */}
+                    {isRecruiter && job.user_id === authUser?.id && (
                       <Box display="flex" gap={1}>
                         <IconButton 
                           size="small" 
@@ -375,211 +377,221 @@ function JobSection() {
               </Box>
             </CardContent>
             <CardActions>
-              <Button size="small" color="primary">
-                Apply Now
-              </Button>
-              <Button size="small">
-                View Details
-              </Button>
+              {/* Only applicants see Apply/View buttons */}
+              {isApplicant && (
+                <>
+                  <Button size="small" color="primary">
+                    Apply Now
+                  </Button>
+                  <Button size="small">
+                    View Details
+                  </Button>
+                </>
+              )}
             </CardActions>
           </JobCard>
         ))
       )}
 
-      {/* Create Job Dialog */}
-      <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Post a New Job</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Job Title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Company"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Job Type</InputLabel>
-                <Select
-                  name="jobType"
-                  value={formData.jobType}
-                  onChange={handleInputChange}
-                  label="Job Type"
-                >
-                  <MenuItem value="Full-time">Full-time</MenuItem>
-                  <MenuItem value="Part-time">Part-time</MenuItem>
-                  <MenuItem value="Contract">Contract</MenuItem>
-                  <MenuItem value="Internship">Internship</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Salary Range"
-                name="salaryRange"
-                value={formData.salaryRange}
-                onChange={handleInputChange}
-                placeholder="e.g., $50,000 - $80,000"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Job Description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                multiline
-                rows={4}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Requirements (comma-separated)"
-                name="requirements"
-                value={formData.requirements}
-                onChange={handleInputChange}
-                placeholder="e.g., React, JavaScript, 3+ years experience"
-                required
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseCreateDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Post Job</Button>
-        </DialogActions>
-      </Dialog>
+      {/* Only recruiters can see dialogs for creating/editing/deleting jobs */}
+      {isRecruiter && (
+        <>
+          {/* Create Job Dialog */}
+          <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} maxWidth="md" fullWidth>
+            <DialogTitle>Post a New Job</DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Job Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Company"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Job Type</InputLabel>
+                    <Select
+                      name="jobType"
+                      value={formData.jobType}
+                      onChange={handleInputChange}
+                      label="Job Type"
+                    >
+                      <MenuItem value="Full-time">Full-time</MenuItem>
+                      <MenuItem value="Part-time">Part-time</MenuItem>
+                      <MenuItem value="Contract">Contract</MenuItem>
+                      <MenuItem value="Internship">Internship</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Salary Range"
+                    name="salaryRange"
+                    value={formData.salaryRange}
+                    onChange={handleInputChange}
+                    placeholder="e.g., $50,000 - $80,000"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Job Description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    multiline
+                    rows={4}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Requirements (comma-separated)"
+                    name="requirements"
+                    value={formData.requirements}
+                    onChange={handleInputChange}
+                    placeholder="e.g., React, JavaScript, 3+ years experience"
+                    required
+                  />
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseCreateDialog}>Cancel</Button>
+              <Button onClick={handleSubmit} variant="contained">Post Job</Button>
+            </DialogActions>
+          </Dialog>
 
-      {/* Edit Job Dialog */}
-      <Dialog open={openEditDialog} onClose={handleCloseEditDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Job</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Job Title"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Company"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Location"
-                name="location"
-                value={formData.location}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Job Type</InputLabel>
-                <Select
-                  name="jobType"
-                  value={formData.jobType}
-                  onChange={handleInputChange}
-                  label="Job Type"
-                >
-                  <MenuItem value="Full-time">Full-time</MenuItem>
-                  <MenuItem value="Part-time">Part-time</MenuItem>
-                  <MenuItem value="Contract">Contract</MenuItem>
-                  <MenuItem value="Internship">Internship</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Salary Range"
-                name="salaryRange"
-                value={formData.salaryRange}
-                onChange={handleInputChange}
-                placeholder="e.g., $50,000 - $80,000"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Job Description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                multiline
-                rows={4}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Requirements (comma-separated)"
-                name="requirements"
-                value={formData.requirements}
-                onChange={handleInputChange}
-                placeholder="e.g., React, JavaScript, 3+ years experience"
-                required
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">Update Job</Button>
-        </DialogActions>
-      </Dialog>
+          {/* Edit Job Dialog */}
+          <Dialog open={openEditDialog} onClose={handleCloseEditDialog} maxWidth="md" fullWidth>
+            <DialogTitle>Edit Job</DialogTitle>
+            <DialogContent>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Job Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Company"
+                    name="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Job Type</InputLabel>
+                    <Select
+                      name="jobType"
+                      value={formData.jobType}
+                      onChange={handleInputChange}
+                      label="Job Type"
+                    >
+                      <MenuItem value="Full-time">Full-time</MenuItem>
+                      <MenuItem value="Part-time">Part-time</MenuItem>
+                      <MenuItem value="Contract">Contract</MenuItem>
+                      <MenuItem value="Internship">Internship</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Salary Range"
+                    name="salaryRange"
+                    value={formData.salaryRange}
+                    onChange={handleInputChange}
+                    placeholder="e.g., $50,000 - $80,000"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Job Description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    multiline
+                    rows={4}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Requirements (comma-separated)"
+                    name="requirements"
+                    value={formData.requirements}
+                    onChange={handleInputChange}
+                    placeholder="e.g., React, JavaScript, 3+ years experience"
+                    required
+                  />
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseEditDialog}>Cancel</Button>
+              <Button onClick={handleSubmit} variant="contained">Update Job</Button>
+            </DialogActions>
+          </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmDialog
-        open={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={handleDeleteConfirm}
-        title="Delete Job"
-        message="Are you sure you want to delete this job posting? This action cannot be undone."
-        itemName="job"
-        loading={deleteLoading}
-      />
+          {/* Delete Confirmation Dialog */}
+          <DeleteConfirmDialog
+            open={showDeleteDialog}
+            onClose={() => setShowDeleteDialog(false)}
+            onConfirm={handleDeleteConfirm}
+            title="Delete Job"
+            message="Are you sure you want to delete this job posting? This action cannot be undone."
+            itemName="job"
+            loading={deleteLoading}
+          />
+        </>
+      )}
     </>
   );
 }
