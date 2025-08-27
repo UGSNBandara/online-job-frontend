@@ -17,7 +17,7 @@ function MainLayout() {
             <LeftSidebar />
           </aside>
           <main className="main-content">
-            <Outlet />
+            <Outlet /> {/* <HomePage />    /* Outlet renders HomePage component  like all*/}
           </main>
           <aside className="right-sidebar">
             <RightSidebar />

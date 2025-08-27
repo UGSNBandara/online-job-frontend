@@ -196,12 +196,6 @@ function PostCard({ post, onPostUpdated, onDelete }) {
     return `${BACKEND_URL}${imagePath}`;
   };
 
-  const getProfileImageUrl = (profileImage) => {
-    if (!profileImage) return '/default_profile.jpg';
-    if (profileImage.startsWith('http')) return profileImage;
-    if (profileImage.startsWith('/api/media/')) return `${BACKEND_URL}${profileImage}`;
-    return `${BACKEND_URL}${profileImage}`;
-  };
 
   return (
     <>

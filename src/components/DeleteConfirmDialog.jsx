@@ -13,6 +13,9 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
+// Styled Components for custom appearance
+
+// Custom styled dialog with rounded corners and specific width constraints
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
     borderRadius: '12px',
@@ -21,6 +24,8 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   },
 }));
 
+// Styled component for the confirmation text box
+// Uses monospace font and gray background to make it look like a code block
 const ConfirmationText = styled(Typography)(({ theme }) => ({
   fontFamily: 'monospace',
   backgroundColor: theme.palette.grey[100],
@@ -34,6 +39,7 @@ const ConfirmationText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
 }));
 
+// Warning text styled in red to grab attention
 const WarningText = styled(Typography)(({ theme }) => ({
   color: theme.palette.error.main,
   fontWeight: 600,
@@ -41,43 +47,45 @@ const WarningText = styled(Typography)(({ theme }) => ({
 }));
 
 function DeleteConfirmDialog({ open, onClose, onConfirm, title, message, itemName, loading = false }) {
-  const [confirmationText, setConfirmationText] = useState('');
-  const [userInput, setUserInput] = useState('');
-  const [error, setError] = useState('');
-  const [deleteError, setDeleteError] = useState('');
+  // State Management
+  const [confirmationText, setConfirmationText] = useState(''); // Random text user must type
+  const [userInput, setUserInput] = useState(''); // What user actually types
+  const [error, setError] = useState(''); // Validation error message
+  const [deleteError, setDeleteError] = useState(''); // Deletion operation error
 
-  // Generate random confirmation text
   useEffect(() => {
     if (open) {
       const generateConfirmationText = () => {
         const patterns = [
-          `DELETE-${itemName?.toUpperCase() || 'POST'}`,
-          `REMOVE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-          `CONFIRM-${Date.now().toString().slice(-6)}`,
-          `TYPE-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          `DELETE-${itemName?.toUpperCase() || 'POST'}`, // Pattern 1: DELETE-ITEMNAME
+          `REMOVE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`, // Pattern 2: REMOVE-RANDOM6CHARS
+          `CONFIRM-${Date.now().toString().slice(-6)}`, // Pattern 3: CONFIRM-TIMESTAMP
+          `TYPE-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, // Pattern 4: TYPE-RANDOM8CHARS
         ];
+        // Randomly select one of the patterns
         return patterns[Math.floor(Math.random() * patterns.length)];
       };
       
       setConfirmationText(generateConfirmationText());
-      setUserInput('');
-      setError('');
-      setDeleteError('');
+      setUserInput(''); 
+      setError(''); 
+      setDeleteError(''); 
     }
-  }, [open, itemName]);
+  }, [open, itemName]); // Re-run when dialog opens or itemName changes
 
   const handleConfirm = async () => {
     if (userInput.trim() !== confirmationText) {
       setError('Confirmation text does not match. Please type it exactly as shown.');
-      return;
+      return; 
     }
-    
+
+    // if passed
     setError('');
     setDeleteError('');
     
     try {
       await onConfirm();
-      // If onConfirm succeeds, the dialog will be closed by the parent
+      // If onConfirm succeeds, the dialog will be closed by the parent component
     } catch (err) {
       setDeleteError('Failed to delete. Please try again.');
     }
@@ -85,15 +93,17 @@ function DeleteConfirmDialog({ open, onClose, onConfirm, title, message, itemNam
 
   const handleClose = () => {
     setUserInput('');
-    setError('');
-    setDeleteError('');
-    onClose();
-  };
+    setError(''); 
+    setDeleteError(''); 
+    onClose(); 
+  }; //only when called
 
-  const isConfirmDisabled = userInput.trim() !== confirmationText || loading;
+  const isConfirmDisabled = userInput.trim() !== confirmationText || loading; //runs on every render
 
+  // STEP 5: Render the dialog UI
   return (
     <StyledDialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      {/* Dialog Header with warning icon and title */}
       <DialogTitle sx={{ 
         color: 'error.main', 
         fontWeight: 600,
@@ -104,41 +114,48 @@ function DeleteConfirmDialog({ open, onClose, onConfirm, title, message, itemNam
       </DialogTitle>
       
       <DialogContent sx={{ pt: 3 }}>
+        {/* Warning message to emphasize permanent action */}
         <WarningText variant="h6">
           ⚠️ This action cannot be undone
         </WarningText>
         
+        {/* Main confirmation message */}
         <Typography variant="body1" sx={{ mb: 3 }}>
           {message || `Are you sure you want to delete this ${itemName || 'item'}?`}
         </Typography>
 
+        {/* Box containing confirmation text instructions and the generated text */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
             To confirm deletion, please type the following text exactly:
           </Typography>
+          {/* Display the generated confirmation text in a styled box */}
           <ConfirmationText variant="body1">
             {confirmationText}
           </ConfirmationText>
         </Box>
 
+        {/* Input field where user types the confirmation text */}
         <TextField
           fullWidth
           label="Type confirmation text"
           value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          error={!!error}
-          helperText={error}
+          onChange={(e) => setUserInput(e.target.value)} 
+          error={!!error} // Show error styling if there's a validation error /!!error gives for false empty error
+          helperText={error} // Show error message below input
           placeholder="Enter the text above"
           variant="outlined"
           sx={{ mb: 2 }}
         />
 
+        {/* Show deletion error if the API call fails */}
         {deleteError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {deleteError}
           </Alert>
         )}
 
+        {/* Show loading indicator during deletion process */}
         {loading && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <CircularProgress size={20} />
@@ -149,7 +166,9 @@ function DeleteConfirmDialog({ open, onClose, onConfirm, title, message, itemNam
         )}
       </DialogContent>
 
+      {/* Dialog action buttons */}
       <DialogActions sx={{ p: 3, pt: 0 }}>
+        {/* Cancel button - always available unless loading */}
         <Button 
           onClick={handleClose} 
           variant="outlined"
@@ -158,11 +177,13 @@ function DeleteConfirmDialog({ open, onClose, onConfirm, title, message, itemNam
         >
           Cancel
         </Button>
+        
+        {/* Delete button - disabled until user types correct confirmation text */}
         <Button 
           onClick={handleConfirm}
           variant="contained" 
           color="error"
-          disabled={isConfirmDisabled}
+          disabled={isConfirmDisabled} // Disabled until validation passes
           sx={{ 
             borderRadius: '8px',
             minWidth: '100px',

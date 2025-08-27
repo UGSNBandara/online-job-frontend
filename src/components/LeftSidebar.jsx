@@ -135,6 +135,8 @@ function LeftSidebar() {
       window.removeEventListener('switchToPosts', handleSwitchToPosts);
       window.removeEventListener('switchToJobs', handleSwitchToJobs);
     };
+
+    //Cross-Component Communication
   }, []);
 
   if (loading) {

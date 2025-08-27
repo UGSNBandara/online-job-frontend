@@ -1,21 +1,21 @@
 import CreatePostButton from '../components/CreatePostButton';
 import PostCard from '../components/PostCard';
 import JobSection from '../components/JobSection';
-import { Box, Pagination, CircularProgress, Alert } from '@mui/material';
+import { Box, CircularProgress, Alert } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useMessage } from '../context/MessageContext';
 import ApiService from '../services/apiService';
 
 function HomePage() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [currentView, setCurrentView] = useState('posts'); // 'posts' or 'jobs'
   const { user: authUser, isLoggedIn } = useAuth();
+  const { profileRefreshToken } = useMessage();
 
-  const fetchPosts = async (pageNum = 1) => {
+  const fetchPosts = async () => {
     try {
       setLoading(true);
       
@@ -27,21 +27,18 @@ function HomePage() {
       
       if (!isLoggedIn || !authUser?.id) {
         // If not logged in, show regular posts
-        const response = await ApiService.getPosts(pageNum, 10);
+        const response = await ApiService.getPosts();
         setPosts(response.posts || response);
-        setTotalPages(response.totalPages || 1);
       } else {
         // If logged in, try wall posts first, fallback to regular posts if it fails
         try {
           const response = await ApiService.getWallPosts(authUser.id);
           setPosts(response.posts || response || []);
-          setTotalPages(response.totalPages || 1);
         } catch (wallError) {
           console.warn('Wall posts endpoint not available, falling back to regular posts:', wallError);
           // Fallback to regular posts
-          const response = await ApiService.getPosts(pageNum, 10);
+          const response = await ApiService.getPosts();
           setPosts(response.posts || response);
-          setTotalPages(response.totalPages || 1);
         }
       }
       
@@ -56,9 +53,9 @@ function HomePage() {
 
   useEffect(() => {
     if (authUser?.id !== undefined) {
-      fetchPosts(page);
+      fetchPosts();
     }
-  }, [page, authUser?.id, isLoggedIn]);
+  }, [authUser?.id, isLoggedIn, profileRefreshToken]);
 
   // Listen for toggle events from LeftSidebar
   useEffect(() => {
@@ -73,10 +70,6 @@ function HomePage() {
       window.removeEventListener('switchToJobs', handleSwitchToJobs);
     };
   }, []);
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
 
   const handleNewPostCreated = (newPost) => {
     if (newPost && newPost.user_id === authUser?.id) {
@@ -116,20 +109,9 @@ function HomePage() {
               ) : (
                 posts.map(post => (
                   <Box key={post._id || post.id} sx={{ mb: 2 }}>
-                    <PostCard post={post} onPostUpdated={() => fetchPosts(page)} />
+                    <PostCard post={post} onPostUpdated={() => fetchPosts()} />
                   </Box>
                 ))
-              )}
-              
-              {totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, mb: 3 }}>
-                  <Pagination 
-                    count={totalPages} 
-                    page={page} 
-                    onChange={handlePageChange} 
-                    color="primary" 
-                  />
-                </Box>
               )}
             </>
           )}

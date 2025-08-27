@@ -72,7 +72,7 @@ const UserProfilePage = () => {
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const { user: authUser, isLoggedIn, setShowAuthModal } = useAuth();
-  const { triggerProfileRefresh } = useMessage();
+  const { triggerProfileRefresh ,profileRefreshToken } = useMessage();
   const [currentUserId, setCurrentUserId] = useState(null);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -97,7 +97,7 @@ const UserProfilePage = () => {
     if (!currentUserId) return;
     loadProfile();
     fetchUserPosts();
-  }, [currentUserId]);
+  }, [currentUserId, profileRefreshToken]);
 
   const loadProfile = async () => {
     try {
@@ -182,6 +182,7 @@ const UserProfilePage = () => {
   };
 
   const handleImageChange = async (event) => {
+    // Step 1: Extract the selected file from the file input event
     const file = event.target.files[0];
     if (!file) return;
 
@@ -217,11 +218,10 @@ const UserProfilePage = () => {
   const handleDeletePost = async (postId) => {
     try {
       await ApiService.deletePost(postId);
-      // Remove the deleted post from the list
+      triggerProfileRefresh();
       setUserPosts(prevPosts => prevPosts.filter(post => post._id !== postId));
     } catch (err) {
       console.error('Error deleting post:', err);
-      // Don't show alert, let the DeleteConfirmDialog handle errors
     }
   };
 

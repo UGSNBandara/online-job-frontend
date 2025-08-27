@@ -383,9 +383,6 @@ function JobSection() {
                   <Button size="small" color="primary">
                     Apply Now
                   </Button>
-                  <Button size="small">
-                    View Details
-                  </Button>
                 </>
               )}
             </CardActions>

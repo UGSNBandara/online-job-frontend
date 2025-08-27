@@ -27,12 +27,26 @@ function AuthModal() {
       const endpoint = isLogin ? `${API_URL}/users/login` : `${API_URL}/users/register`
       const response = await axios.post(endpoint, formData)
       const { user, message } = response.data
-      if (user) {
-        login(user)
+      
+      if (isLogin) {
+        // For login: log the user in immediately
+        if (user) {
+          login(user)
+        }
+        setSuccess(message || 'Logged in')
+        setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'applicant' })
+        setShowAuthModal(false)
+      } else {
+        // For registration: show success message and redirect to login form
+        setSuccess(message || 'Account created successfully! Please sign in.')
+        setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'applicant' })
+        
+        // Wait 2 seconds to show success message, then switch to login form
+        setTimeout(() => {
+          setIsLogin(true)  // Switch to login form
+          setSuccess('')    // Clear success message
+        }, 1000)
       }
-      setSuccess(message || (isLogin ? 'Logged in' : 'Registered'))
-      setFormData({ email: '', password: '', firstName: '', lastName: '', role: 'applicant' })
-      setShowAuthModal(false)
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred')
     } finally {

@@ -13,7 +13,6 @@ function ChatOverlay({ chat, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [newMessageCount, setNewMessageCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const messagesEndRef = useRef(null);
@@ -103,11 +102,8 @@ function ChatOverlay({ chat, onClose }) {
                 return prevMessages; // No changes
               });
               
-              if (newMessages.length > 0) {
-                setNewMessageCount(newMessages.length);
-                // Auto-scroll to bottom for new messages (instant, no animation)
-                setTimeout(() => scrollToBottom(false), 100);
-              }
+              // Auto-scroll to bottom for new messages (instant, no animation)
+              setTimeout(() => scrollToBottom(false), 100);
             }
           } else {
             // For initial load: set all messages
@@ -226,15 +222,6 @@ function ChatOverlay({ chat, onClose }) {
         display: "flex",
         flexDirection: "column",
         zIndex: 1000,
-        "& .new-message-notification": {
-          "@keyframes fadeInOut": {
-            "0%": { opacity: 0, transform: "translateY(-10px)" },
-            "20%": { opacity: 1, transform: "translateY(0)" },
-            "80%": { opacity: 1, transform: "translateY(0)" },
-            "100%": { opacity: 0, transform: "translateY(-10px)" },
-          },
-          animation: "fadeInOut 3s ease-in-out",
-        },
       }}
     >
       <Box
@@ -283,28 +270,8 @@ function ChatOverlay({ chat, onClose }) {
           display: "flex",
           flexDirection: "column",
           gap: 1,
-          position: "relative",
         }}
       >
-        {newMessageCount > 0 && (
-          <Box
-            className="new-message-notification"
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              bgcolor: "primary.main",
-              color: "white",
-              px: 2,
-              py: 1,
-              borderRadius: "20px",
-              fontSize: "0.8rem",
-              zIndex: 1,
-            }}
-          >
-            {newMessageCount} new message{newMessageCount > 1 ? 's' : ''}
-          </Box>
-        )}
         
         {loading ? (
           <Typography variant="body2" color="text.secondary" align="center">

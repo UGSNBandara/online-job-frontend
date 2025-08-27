@@ -118,7 +118,7 @@ function CreatePostButton({ onPostCreated }) {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('user_id', user?.id);
       if (image) {
-        formDataToSend.append('images', image);
+        formDataToSend.append('file', image);
       }
 
       const response = await axios.post(`${BACKEND_URL}/api/posts`, formDataToSend, {
@@ -161,16 +161,6 @@ function CreatePostButton({ onPostCreated }) {
             </Box>
 
             <form onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                label="User ID"
-                value={isLoggedIn ? (user?.id || '') : formData.user_id}
-                onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
-                required
-                margin="normal"
-                helperText={isLoggedIn ? 'Using logged-in user id' : 'Enter the user ID who is creating this post'}
-              />
-
               <TextField
                 fullWidth
                 label="Title"

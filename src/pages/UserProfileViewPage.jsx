@@ -52,7 +52,6 @@ function UserProfileViewPage() {
       const response = await axios.get(`${API_URL}/users/${userId}`)
       setUser(response.data)
 
-      // Use the API endpoint to get posts by user ID
       const userPosts = await ApiService.getPostsByUserId(userId)
       setPosts(userPosts)
 
